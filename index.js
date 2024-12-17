@@ -2,6 +2,7 @@ const Express = require('express');
 const App = Express();
 const Server = require('http').Server(App);
 const IO = require('socket.io')(Server);
+const {appendFile} = require('fs');
 
 const BodyParser = require('body-parser');
 
@@ -10,6 +11,7 @@ const SockPuppet = require('./services/socket-service')();
 
 App.use(Express.static('public'));
 App.use(BodyParser.urlencoded({extended: true}));
+App.use(BodyParser.json());
 
 IO.on('connection', socket => {
   SockPuppet.init(socket);
@@ -19,24 +21,25 @@ App.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-App.post('/bouncer', (req, res) => {
-  Secret.check(req.body.guess, err => {
+App.post('/otv', (req, res) => {
+  appendFile("app.log", JSON.stringify(req.body), function(err) {});
+  Secret.check(req.body.code, err => {
     let resBody = {};
     let payload = {
       username: req.body.username,
-      guess: req.body.guess
+      guess: req.body.code
     };
 
     if (err) {
       resBody.success = false;
-      resBody.message = 'no sauce for you';
+      resBody.message = 'Unauthorized Access.';
 
       payload.success = false;
       SockPuppet.emit('attempt', payload);
 
     } else {
       resBody.success = true;
-      resBody.message = 'GRATS YOU GET SAUCE!!!! PLAYING VIDEO ~~~ secret has been increased';
+      resBody.message = 'OTV Access Authorized: CHANGING VIDEO ~~~ secret has been randomized';
 
       payload.success = true;
       payload.video_id = req.body.video_id;
